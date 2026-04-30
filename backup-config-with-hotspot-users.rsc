@@ -188,13 +188,10 @@ add interface=*17 list=MGMT
 /interface pppoe-server server
 add default-profile=pppoe-prof interface=vlan20-pppoe one-session-per-host=\
     yes service-name=ISP
-/interface wireguard peers
-add allowed-address=192.168.90.22/32 client-allowed-address=192.168.90.1/32 \
-    comment="my laptop" interface=*17 name=peer2 public-key=\
-    "9nPhs44qV5PFVS+toW/+tm/pMVOp9vU062Gb2Hgi3UY="
 /ip address
-add address=192.168.1.10/24 comment=defconf interface=wan1 network=\
-    192.168.1.0
+#الامر التالي يتغير العنوان الخاص به على حسب عنوان مزود الانترنت لديك
+#add address=192.168.1.10/24 comment=defconf interface=wan1 network=\
+    # 192.168.1.0
 add address=10.10.0.1/22 comment=HOTSPOT interface=vlan10-hotspot network=\
     10.10.0.0
 add address=172.16.20.1/24 comment=PPPOE interface=vlan20-pppoe network=\
@@ -208,8 +205,7 @@ add address=10.255.255.2 comment=radius-loopback interface=loopback-radius \
 add address=192.168.1.12 comment="mangment interface" disabled=yes interface=\
     ether10 network=192.168.1.12
 add address=192.168.99.1/24 interface=ether10 network=192.168.99.0
-/ip cloud
-set ddns-enabled=yes vpn-prefer-relay-code="EUR1 / USA1"
+
 /ip dhcp-client
 add interface=wan1 name=client1
 # Interface not active
@@ -219,9 +215,13 @@ add address=10.10.0.0/22 dns-server=10.10.0.1 gateway=10.10.0.1
 add address=192.168.99.0/24 comment="Management Network" dns-none=yes \
     gateway=192.168.99.1
 /ip dns
-set allow-remote-requests=yes cache-size=4096KiB max-udp-packet-size=512 \
-    servers=1.1.1.1,8.8.8.8
+/ip dns
+set allow-remote-requests=yes \
+    cache-size=32768KiB \
+    max-udp-packet-size=1232 \
+    servers=1.1.1.1,1.0.0.1,8.8.8.8,8.8.4.4
 /ip firewall filter
+"VPN NAT"
 add action=accept chain=input in-interface=mangmentViaVPN
 add action=passthrough chain=unused-hs-chain comment=\
     "place hotspot rules here" disabled=yes
@@ -241,13 +241,20 @@ add action=accept chain=forward comment="Allow Internet" in-interface-list=\
     LAN out-interface-list=WAN
 add action=accept chain=input comment="Allow DNS" dst-port=53 \
     in-interface-list=LAN protocol=udp
+
+add chain=input action=accept protocol=tcp dst-port=53 in-interface-list=LAN comment="Allow DNS TCP"
+  
 add action=accept chain=input comment="WireGuard VPN" dst-port=51820 \
     protocol=udp
+/ip firewall filter
+add chain=input protocol=tcp connection-state=new \
+psd=21,3s,3,1 action=add-src-to-address-list \
+address-list=port_scanners address-list-timeout=1d comment="Detect Port Scan"
 add action=drop chain=input comment="Drop WAN Access" in-interface-list=WAN
 add action=accept chain=forward comment="Allow Established/Related" \
     connection-state=established,related
-add action=drop chain=forward comment="Drop All"
 add action=drop chain=forward comment="Drop Invalid" connection-state=invalid
+add action=drop chain=forward comment="Drop All"
 add action=drop chain=forward comment="Block Fake IP Hotspot" in-interface=\
     vlan10-hotspot src-address=!10.10.0.0/22
 add action=drop chain=forward comment="Block Fake IP PPPoE" in-interface=\
@@ -269,7 +276,7 @@ add action=drop chain=input comment="Drop All"
 add action=passthrough chain=unused-hs-chain comment=\
     "place hotspot rules here" disabled=yes
 # no interface
-add action=masquerade chain=srcnat comment="VPN NAT" out-interface=*17
+add action=masquerade chain=srcnat comment="VPN NAT" out-interface=mangmentViaVPN
 add action=masquerade chain=srcnat comment="Internet NAT" out-interface=wan1
 /ip firewall raw
 add action=drop chain=prerouting comment="Block Port Scanners" \
@@ -282,7 +289,7 @@ add address-pool=hotspot_pool disabled=no interface=vlan10-hotspot name=\
     hotspot1 profile=s.net
 /ip service
 set www address=192.168.99.0/24
-set winbox address=192.168.99.0/24,192.168.195.0/24
+set winbox address=192.168.99.0/24,192.168.192.0/24
 /ppp aaa
 set interim-update=5m use-radius=yes
 /radius
@@ -360,9 +367,4 @@ add interval=10s name=login-speed2 policy=\
     start-date=2026-04-25 start-time=15:53:58
 /user-manager
 set enabled=yes
-/user-manager profile-limitation
-add limitation=12h profile=12h
-/user-manager router
-add address=172.31.255.1 name=rb1100
-/user-manager user-profile
-add profile=prof1 user=user1
+
