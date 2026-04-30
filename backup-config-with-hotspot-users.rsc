@@ -150,19 +150,13 @@ add dont-require-permissions=no name=ScriptSoliman owner=admin policy=\
     ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="{\
     [ /tool user-manager user remove [find where (  name=\"\" || name=\"\"   )\
     \_] ]}"
-/user-manager limitation
-add name=12h transfer-limit=1024000000B uptime-limit=12h
-/user-manager profile
-add name=prof1 name-for-users=prof1 validity=unlimited
-add name=12h name-for-users=12h override-shared-users=unlimited price=100 \
-    starts-when=first-auth validity=1d
-/user-manager user
-add name=user1
-/zerotier
-set zt1 disabled=no disabled=no
-/zerotier interface
-add allow-default=yes allow-global=yes allow-managed=yes comment=vpn_zerotier \
-    disabled=no instance=zt1 name=mangmentViaVPN network=743993800fd13c5f
+
+#الامر التالي يتغير العنوان الخاص به على حسب عنوان id الخاص بvpn
+#/zerotier
+#set zt1 disabled=no disabled=no
+#/zerotier interface
+# add allow-default=yes allow-global=yes allow-managed=yes comment=vpn_zerotier \
+ #   disabled=no instance=zt1 name=mangmentViaVPN network=743993800fd13c5f
 /interface bridge port
 add bridge=br-lan interface=lan1 pvid=10
 add bridge=br-lan interface=lan2 pvid=10
@@ -221,7 +215,6 @@ set allow-remote-requests=yes \
     max-udp-packet-size=1232 \
     servers=1.1.1.1,1.0.0.1,8.8.8.8,8.8.4.4
 /ip firewall filter
-"VPN NAT"
 add action=accept chain=input in-interface=mangmentViaVPN
 add action=passthrough chain=unused-hs-chain comment=\
     "place hotspot rules here" disabled=yes
